@@ -69,3 +69,11 @@ def plot_hed_space(he_rgb, ihc_rgb, dab_true, dab_pred, patches=1, save_path=Non
     fig.tight_layout()
     plt.savefig(save_path, bbox_inches='tight')
     plt.close()
+
+
+def plot_scatter_stain(y_true, y_pred, save_path=None):
+    """ Scatter plot between predicted stain ratio and the true stain_ratio.
+    """
+    plt.figure(figsize=(10, 10))
+    plt.scatter(y_true, y_pred)
+    plt.savefig(save_path)

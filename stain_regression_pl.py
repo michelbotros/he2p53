@@ -66,11 +66,11 @@ def train(run_name, dataset_dir, nr_epochs, device_nr, batch_size, lr, wd, exp_d
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--run_name", type=str, default='test', help="name of this run")
-    parser.add_argument("--dataset_dir", type=str, default='/data/archief/AMC-data/Barrett/temp/patch_dataset_s1_512',
+    parser.add_argument("--dataset_dir", type=str, default='/data/archief/AMC-data/Barrett/temp/patch_dataset_s0.25_512',
                         help="directory where to patch dataset is stored")
     parser.add_argument("--nr_epochs", type=int, default=250, help="the number of epochs")
     parser.add_argument("--device_nr", type=int, default=0, help="which of the gpus to use")
-    parser.add_argument("--batch_size", type=int, default=16, help="the size of mini batches")
+    parser.add_argument("--batch_size", type=int, default=128, help="the size of mini batches")
     parser.add_argument("--lr", type=int, default=1e-3, help="the learning rate")
     parser.add_argument("--wd", type=int, default=1e-5, help="weight decay (L2)")
     parser.add_argument("--exp_dir", type=str, default='/data/archief/AMC-data/Barrett/experiments/he2p53/stain_regression/',

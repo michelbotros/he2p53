@@ -11,6 +11,7 @@ import wandb
 import os
 from tqdm import tqdm
 from utils import plot_hed_space
+from scipy.stats import pearsonr
 
 
 def train(run_name, nr_epochs, batch_size, lr, exp_dir, wandb_key):
@@ -18,7 +19,7 @@ def train(run_name, nr_epochs, batch_size, lr, exp_dir, wandb_key):
     """
 
     # load dataset
-    dataset_dir = '/data/archief/AMC-data/Barrett/temp/patch_dataset_s1_512'
+    dataset_dir = '/data/archief/AMC-data/Barrett/temp/patch_dataset_s0.25_512'
     dataset = VirtualStainDataset(dataset_dir)
     print('Dataset contains: {} pairs.'.format(dataset.__len__()))
 
@@ -55,8 +56,11 @@ def train(run_name, nr_epochs, batch_size, lr, exp_dir, wandb_key):
 
     for epoch in range(nr_epochs):
 
+        # loss and pcc
         train_loss = 0.0
         val_loss = 0.0
+        train_pcc = 0.0
+        val_pcc = 0.0
 
         for x, y, d in tqdm(train_loader, desc='Training'):
             x = x.to(torch.float).to(device)
@@ -75,9 +79,9 @@ def train(run_name, nr_epochs, batch_size, lr, exp_dir, wandb_key):
             loss.backward()
             optimizer.step()
             train_loss += loss.item()
+            train_pcc += pearsonr(d.cpu().detach().numpy(), y_pred.cpu().detach().numpy())[0]
 
         # validate
-
         with torch.no_grad():
             for x, y, d in tqdm(val_loader, desc='Validating'):
                 x = x.to(torch.float).to(device)
@@ -90,6 +94,7 @@ def train(run_name, nr_epochs, batch_size, lr, exp_dir, wandb_key):
                 # compute loss & update
                 loss = loss_function(y_pred, d)
                 val_loss += loss.item()
+                val_pcc += pearsonr(d.cpu().detach().numpy(), y_pred.cpu().detach().numpy())[0]
 
                 # save one batch of validation examples for plotting
                 he_example = x.cpu().detach().numpy().transpose(0, 2, 3, 1).astype(np.uint8)[0]
@@ -100,7 +105,13 @@ def train(run_name, nr_epochs, batch_size, lr, exp_dir, wandb_key):
         # log & print stats
         avg_train_loss = train_loss / len(train_loader)
         avg_val_loss = val_loss / len(val_loader)
-        print('Epoch {}, train loss: {:.3f}, val loss: {:.3f}'.format(epoch, avg_train_loss, avg_val_loss))
+        avg_train_pcc = train_pcc / len(train_loader)
+        avg_val_pcc = val_pcc / len(val_loader)
+        print('Epoch {}, train loss: {:.3f}, val loss: {:.3f}, train pcc: {:.3f}, val pcc: {:.3f}'.format(epoch,
+                                                                                                          avg_train_loss,
+                                                                                                          avg_val_loss,
+                                                                                                          avg_train_pcc,
+                                                                                                          avg_val_pcc))
 
         # plot predictions on the validation set
         os.makedirs(os.path.join(exp_dir, 'val_predictions'), exist_ok=True)
@@ -110,6 +121,8 @@ def train(run_name, nr_epochs, batch_size, lr, exp_dir, wandb_key):
         wandb.log({'epoch': epoch + 1,
                    'train loss': avg_train_loss,
                    'val loss': avg_val_loss,
+                   'train pcc': avg_train_pcc,
+                   'val pcc': avg_val_pcc,
                    'prediction': wandb.Image(pred_save_path)})
 
         # safe lowest loss
@@ -130,7 +143,7 @@ if __name__ == '__main__':
                         default='/data/archief/AMC-data/Barrett/experiments/he2p53/stain_regression/',
                         help="output directory for this experiment")
     parser.add_argument("--nr_epochs", type=int, default=250, help="the number of epochs")
-    parser.add_argument("--batch_size", type=int, default=16, help="the size of mini batches")
+    parser.add_argument("--batch_size", type=int, default=128, help="the size of mini batches")
     parser.add_argument("--lr", type=float, default=1e-3, help="initial the learning rate")
     parser.add_argument("--wandb_key", type=str, help="key for logging to weights and biases")
 

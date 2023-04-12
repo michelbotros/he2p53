@@ -18,7 +18,7 @@ def train(run_name, nr_epochs, batch_size, lr, exp_dir, wandb_key):
     """
 
     # load dataset
-    dataset_dir = '/data/archief/AMC-data/Barrett/temp/patch_dataset_s1_512'
+    dataset_dir = '/data/archief/AMC-data/Barrett/temp/patch_dataset_s0.25_512'
     dataset = VirtualStainDataset(dataset_dir)
     print('Dataset contains: {} pairs.'.format(dataset.__len__()))
 

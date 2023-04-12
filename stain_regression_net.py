@@ -4,6 +4,8 @@ import pytorch_lightning as pl
 import wandb
 import numpy as np
 from cbr import CBR5
+from scipy.stats import pearsonr
+import matplotlib.pyplot as plt
 
 
 def accumulate_outputs(outputs):
@@ -36,12 +38,22 @@ class StainRegressionNet(pl.LightningModule):
         return loss
 
     def validation_epoch_end(self, outputs):
-        y_true, y_prob = accumulate_outputs(outputs)
+        y_true, y_pred = accumulate_outputs(outputs)
+
         # compute PCC
-        # scatter plot correlation
+        pcc, p_value = pearsonr(y_true, y_pred)
+        self.log_dict({'pcc': pcc, 'p_value': p_value})
+
+        # to-do: add scatter plot correlation
 
     def test_epoch_end(self, outputs):
         y_true, y_pred = accumulate_outputs(outputs)
+
+        # compute PCC
+        pcc, p_value = pearsonr(y_true, y_pred)
+        self.log_dict({'pcc': pcc, 'p_value': p_value})
+
+        # to-do: add scatter plot correlation
 
     def validation_step(self, val_batch, batch_idx):
         # forward and predict

@@ -18,40 +18,43 @@ class VirtualStainDataset(Dataset):
         return len(self.he_files)
 
     def __getitem__(self, idx):
+
         # read in HE and p53
         he = read_image(self.he_files[idx]).to(torch.float)
         p53 = read_image(self.p53_files[idx]).to(torch.float)
 
         # compute staining percentage from p53
-        p53_rgb = np.transpose(p53.numpy(), (1, 2, 0))
+        p53_rgb = np.transpose(p53.numpy(), (1, 2, 0)).astype(np.uint8)
         dab_density = torch.tensor(DAB_density_norm(p53_rgb), dtype=torch.float32)
 
         return he, p53, dab_density
 
 
 def DAB_density_norm(ihc_rgb):
-    """ Convert RGB colour space to Haematoxylin-Eosin-DAB (HED) colour space and calculate the percentage of DAB staining from the DAB channel.
-        Normalized by the amount of tissue in the patch, computed from the HE.
+    """ Convert RGB colour space to Haematoxylin-Eosin-DAB (HED) colour space and calculate the ratio of DAB to HE staining.
 
     Args:
         ihc_rgb: p53 image patch (torch.Tensor) [C, H, W]
 
     Returns
-        dab_density: the ratio of Haematoxyl to DAB staining (float)
+        dab_density: the ratio of  DAB to Haematoxyl staining (float)
 
     """
     # convert to hed-space and get the dab channel
     ihc_hed = rgb2hed(ihc_rgb)
-    he_channel = ihc_hed[:, :, 0]
-    dab_channel = ihc_hed[:, :, 2]
+    h_channel = ihc_hed[:, :, 0]
+    d_channel = ihc_hed[:, :, 2]
 
     # compute ratio d-to-h staining ratio
-    dab_density = np.sum(dab_channel) / np.sum(he_channel)
+    dab_density = np.sum(d_channel) / np.sum(h_channel)
 
     return dab_density
 
 
 def get_dataloaders(dataset_dir, batch_size, num_workers=16):
+    """ Returns the dataloaders for the experiment
+    """
+    # ToDo: properly split on patient-level
 
     # load dataset
     dataset = VirtualStainDataset(dataset_dir)
